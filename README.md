@@ -63,7 +63,7 @@ Example Response (if rate limit is not exceeded):
 }
 ```
 
-Example Response (if rate limit is not exceeded):
+Example Response (if rate limit is exceeded):
 ```json
 {
    "timestamp": "2023-10-02T07:13:42.918+00:00",
