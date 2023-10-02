@@ -29,7 +29,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final Map<String, RequestCounter> requestCountMap = new ConcurrentHashMap<>();
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String requestUri = request.getRequestURI();
         if (ENDPOINTS_TO_CHECK.contains(requestUri)) {
             var ipAddress = request.getRemoteAddr();
@@ -49,7 +49,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         private int count;
         private long lastResetTime;
 
-        public boolean shouldBlock() {
+        public synchronized boolean shouldBlock() {
             long currentTime = Instant.now().getEpochSecond();
             if (currentTime - lastResetTime >= ONE_MINUTE_INTERVAL_IN_SECONDS) {
                 // Reset counter and update the reset time
