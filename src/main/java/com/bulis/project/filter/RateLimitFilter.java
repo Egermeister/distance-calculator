@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,15 +24,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private static final int MAX_REQUESTS_PER_MINUTE = 10;
+    private static final List<String> ENDPOINTS_TO_CHECK = List.of("/api/v1/distance/calculate");
+
     private final Map<String, RequestCounter> requestCountMap = new ConcurrentHashMap<>();
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
-        var ipAddress = request.getRemoteAddr();
-        RequestCounter requestCounter = requestCountMap.computeIfAbsent(ipAddress, k -> new RequestCounter());
+        String requestUri = request.getRequestURI();
+        if (ENDPOINTS_TO_CHECK.contains(requestUri)) {
+            var ipAddress = request.getRemoteAddr();
+            RequestCounter requestCounter = requestCountMap.computeIfAbsent(ipAddress, k -> new RequestCounter());
 
-        if (requestCounter.shouldBlock()) {
-            throw new RequestLimitExceededException();
+            if (requestCounter.shouldBlock()) {
+                throw new RequestLimitExceededException();
+            }
         }
 
         filterChain.doFilter(request, response);
