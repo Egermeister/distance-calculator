@@ -66,9 +66,9 @@ Example Response (if rate limit is not exceeded):
 Example Response (if rate limit is exceeded):
 ```json
 {
-   "timestamp": "2023-10-02T07:13:42.918+00:00",
-   "status": 500,
-   "error": "Internal Server Error",
-   "path": "/api/v1/distance/calculate"
+   "status": 429,
+   "error": "Too Many Requests",
+   "message": "Request limit exceeded. Please try again later.",
+   "timestamp": "2023-10-02T07:13:42.918+00:00"
 }
 ```
