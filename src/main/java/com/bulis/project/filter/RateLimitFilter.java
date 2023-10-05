@@ -2,11 +2,14 @@ package com.bulis.project.filter;
 
 import com.bulis.project.exception.RequestLimitExceededException;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -20,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class RateLimitFilter extends OncePerRequestFilter {
 
@@ -28,6 +32,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final Map<String, RequestCounter> requestCountMap = new ConcurrentHashMap<>();
 
+    @Qualifier("handlerExceptionResolver")
+    private final HandlerExceptionResolver exceptionResolver;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String requestUri = request.getRequestURI();
@@ -35,8 +42,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
             var ipAddress = request.getRemoteAddr();
             RequestCounter requestCounter = requestCountMap.computeIfAbsent(ipAddress, k -> new RequestCounter());
 
-            if (requestCounter.shouldBlock()) {
-                throw new RequestLimitExceededException();
+            try {
+                if (requestCounter.shouldBlock()) {
+                    throw new RequestLimitExceededException();
+                }
+            } catch (RequestLimitExceededException exception) {
+                exceptionResolver.resolveException(request, response, null, exception);
+                return;
             }
         }
 
